@@ -1,6 +1,6 @@
-import type { NextConfig } from "next";
+const skipBuildChecks = process.env.SKIP_BUILD_CHECKS === "1";
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   images: {
     remotePatterns: [
       {
@@ -8,6 +8,14 @@ const nextConfig: NextConfig = {
         hostname: "images.unsplash.com",
       },
     ],
+  },
+  eslint: {
+    // Save RAM/CPU on tiny prod boxes. Run `pnpm check` on your dev machine instead.
+    ignoreDuringBuilds: skipBuildChecks,
+  },
+  typescript: {
+    // Save RAM/CPU on tiny prod boxes. Run `pnpm typecheck` on your dev machine instead.
+    ignoreBuildErrors: skipBuildChecks,
   },
 };
 

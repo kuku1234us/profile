@@ -45,9 +45,11 @@ Option A (keep your current PM2 start command):
 1. Create `.env.production.local` on the EC2 box and set:
    - `NEXTAUTH_URL=https://profile.kothreat.us`
    - `NEXTAUTH_SECRET=...` (long random string)
+   - `SKIP_BUILD_CHECKS=1` (skips Next build-time ESLint + TypeScript checks to save RAM)
    - any other prod-only vars (e.g. SwitchPointServer script paths)
 2. Build and start:
    - `pnpm install`
+   - `pnpm check` (run this on your laptop before you push to GitHub)
    - `pnpm build`
    - `pm2 start pnpm --name profile -- start`
 
