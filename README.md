@@ -31,6 +31,34 @@ Create a `.env.local` using `env.example` as a template:
 - **`NEXTAUTH_SECRET`**: a long random string (required in production)
 - **`ADMIN_PASSWORD`** (optional): defaults to `Clash19191`
 
+## Deploying to Ubuntu EC2 with PM2 (recommended env setup)
+
+Avoid editing `.env` files per environment:
+
+- **Local dev (Windows)**: use `.env.local` (gitignored)
+- **EC2 production**: use `.env.production.local` (gitignored) OR PM2 `env_production` in `ecosystem.config.cjs`
+
+Quick start on EC2:
+
+Option A (keep your current PM2 start command):
+
+1. Create `.env.production.local` on the EC2 box and set:
+   - `NEXTAUTH_URL=https://profile.kothreat.us`
+   - `NEXTAUTH_SECRET=...` (long random string)
+   - any other prod-only vars (e.g. SwitchPointServer script paths)
+2. Build and start:
+   - `pnpm install`
+   - `pnpm build`
+   - `pm2 start pnpm --name profile -- start`
+
+Option B (PM2 ecosystem file):
+
+1. Copy `ecosystem.config.cjs` and **edit `NEXTAUTH_URL` + `NEXTAUTH_SECRET`** on the server.
+2. Build and start:
+   - `pnpm install`
+   - `pnpm build`
+   - `pm2 start ecosystem.config.cjs --env production`
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
