@@ -20,6 +20,17 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Admin auth (NextAuth)
+
+- **Login**: `http://localhost:3000/login`
+- **Admin**: `http://localhost:3000/admin` (requires login)
+
+Create a `.env.local` using `env.example` as a template:
+
+- **`NEXTAUTH_URL`**: `http://localhost:3000`
+- **`NEXTAUTH_SECRET`**: a long random string (required in production)
+- **`ADMIN_PASSWORD`** (optional): defaults to `Clash19191`
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

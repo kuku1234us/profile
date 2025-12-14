@@ -1,0 +1,14 @@
+#!/bin/bash
+VPN_PORT="49898"
+
+# 1. Clear NAT forwarding rules
+iptables -t nat -F
+
+# 2. Kill existing forwarded connections so traffic stays local
+# This disconnects your laptop from the Verizon Forwarder
+conntrack -D -p tcp --dport $VPN_PORT > /dev/null 2>&1
+conntrack -D -p udp --dport $VPN_PORT > /dev/null 2>&1
+
+# 3. Save
+netfilter-persistent save 2>/dev/null || service iptables save 2>/dev/null
+echo "✅ Switched to LOCAL AWS Mode. Connections flushed."

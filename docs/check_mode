@@ -1,0 +1,7 @@
+#!/bin/bash
+# Check if the NAT table contains the Verizon Private IP
+if sudo iptables -t nat -L PREROUTING -n | grep -q "172.31.117.228"; then
+  echo "verizon"
+else
+  echo "aws"
+fi

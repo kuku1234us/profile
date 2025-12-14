@@ -1,0 +1,31 @@
+#!/bin/bash
+# Verizon Private IP
+TARGET_IP="172.31.117.228"
+VPN_PORT="49898"
+PANEL_PORT="12593"
+
+# 1. Enable IP Forwarding on the fly (Just in case)
+sysctl -w net.ipv4.ip_forward=1 > /dev/null
+
+# 2. Clear existing NAT rules
+iptables -t nat -F
+
+# 3. CRITICAL: Kill existing local connections so traffic forces a re-route
+# This disconnects your laptop from the Local AWS X-UI
+conntrack -D -p tcp --dport $VPN_PORT > /dev/null 2>&1
+conntrack -D -p udp --dport $VPN_PORT > /dev/null 2>&1
+
+# 4. Add Forwarding Rules
+# VPN Traffic
+iptables -t nat -A PREROUTING -p tcp --dport $VPN_PORT -j DNAT --to-destination $TARGET_IP:$VPN_PORT
+iptables -t nat -A PREROUTING -p udp --dport $VPN_PORT -j DNAT --to-destination $TARGET_IP:$VPN_PORT
+# Admin Panel
+iptables -t nat -A PREROUTING -p tcp --dport $PANEL_PORT -j DNAT --to-destination $TARGET_IP:$PANEL_PORT
+iptables -t nat -A PREROUTING -p udp --dport $PANEL_PORT -j DNAT --to-destination $TARGET_IP:$PANEL_PORT
+
+# 5. Enable Masquerading (Required for return traffic)
+iptables -t nat -A POSTROUTING -j MASQUERADE
+
+# 6. Save
+netfilter-persistent save 2>/dev/null || service iptables save 2>/dev/null
+echo "✅ Switched to VERIZON Mode. Connections flushed."
