@@ -5,13 +5,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 First, run the development server:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+bun run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
@@ -31,35 +25,34 @@ Create a `.env.local` using `env.example` as a template:
 - **`NEXTAUTH_SECRET`**: a long random string (required in production)
 - **`ADMIN_PASSWORD`** (optional): defaults to `Clash19191`
 
-## Deploying to Ubuntu EC2 with PM2 (recommended env setup)
+## Deploying to Ubuntu EC2 with Bun (systemd)
 
-Avoid editing `.env` files per environment:
+This project is intended to run in **Bun-only mode** in both development and production. In practice, that means:
 
-- **Local dev (Windows)**: use `.env.local` (gitignored)
-- **EC2 production**: use `.env.production.local` (gitignored) OR PM2 `env_production` in `ecosystem.config.cjs`
+- Bun is used for dependency installs: `bun install`
+- Bun is used to run the app: `bun run dev`, `bun run build`, `bun run start`
+- The EC2 process manager is **systemd**, not PM2 (PM2 is Node-based).
 
-Quick start on EC2:
+### Environment variables
 
-Option A (keep your current PM2 start command):
+Avoid committing `.env` files. Instead:
 
-1. Create `.env.production.local` on the EC2 box and set:
-   - `NEXTAUTH_URL=https://profile.kothreat.us`
-   - `NEXTAUTH_SECRET=...` (long random string)
-   - `SKIP_BUILD_CHECKS=1` (skips Next build-time ESLint + TypeScript checks to save RAM)
-   - any other prod-only vars (e.g. SwitchPointServer script paths)
-2. Build and start:
-   - `pnpm install`
-   - `pnpm check` (run this on your laptop before you push to GitHub)
-   - `pnpm build`
-   - `pm2 start pnpm --name profile -- start`
+- **Local dev**: create `.env.local` from `env.example`
+- **EC2 production**: create `.env.production.local` on the server (gitignored) and set at least:
+  - `NEXTAUTH_URL=https://profile.kothreat.us`
+  - `NEXTAUTH_SECRET=...` (long random string)
+  - `SKIP_BUILD_CHECKS=1` (optional; skips build-time TS checks on small boxes)
 
-Option B (PM2 ecosystem file):
+### Deploy script
 
-1. Copy `ecosystem.config.cjs` and **edit `NEXTAUTH_URL` + `NEXTAUTH_SECRET`** on the server.
-2. Build and start:
-   - `pnpm install`
-   - `pnpm build`
-   - `pm2 start ecosystem.config.cjs --env production`
+Use `deploy.sh`. It will:
+
+1. Build the app locally (producing `.next`)
+2. Upload the minimal runtime bundle to EC2
+3. Run `bun install --production --frozen-lockfile` on the server when `bun.lock` changed
+4. Install/update a `systemd` unit (`profile.service`) and restart it
+
+If you previously used PM2, the deploy script will remove the old PM2 process to avoid port conflicts.
 
 ## Learn More
 

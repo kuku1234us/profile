@@ -11,6 +11,9 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -39,33 +42,38 @@ export function AppSidebar({ userName }: { userName: string }) {
       <SidebarSeparator />
 
       <SidebarContent>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              tooltip="Dashboard"
-              isActive={pathname === "/admin"}
-            >
-              <Link href="/admin">
-                <LayoutDashboardIcon />
-                <span>Dashboard</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+        <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  tooltip="Dashboard"
+                  isActive={pathname === "/admin"}
+                >
+                  <Link href="/admin">
+                    <LayoutDashboardIcon />
+                    <span>Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
 
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              tooltip="SwitchPointServer"
-              isActive={pathname.startsWith("/admin/switchpointserver")}
-            >
-              <Link href="/admin/switchpointserver">
-                <VerizonIcon className="size-4" />
-                <span>SwitchPointServer</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  tooltip="SwitchPointServer"
+                  isActive={pathname.startsWith("/admin/switchpointserver")}
+                >
+                  <Link href="/admin/switchpointserver">
+                    <VerizonIcon className="size-4" />
+                    <span>SwitchPointServer</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter>

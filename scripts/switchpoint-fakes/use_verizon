@@ -1,0 +1,10 @@
+#!/bin/bash
+set -euo pipefail
+
+# Fake SwitchPointServer "use_verizon" script for local development.
+
+STATE_FILE="${SWITCHPOINT_STATE_FILE:-/tmp/switchpoint_mode}"
+echo "verizon" > "$STATE_FILE"
+echo "✅ [FAKE] Switched to Verizon mode."
+
+

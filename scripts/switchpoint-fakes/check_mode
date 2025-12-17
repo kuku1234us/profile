@@ -1,0 +1,21 @@
+#!/bin/bash
+set -euo pipefail
+
+# Fake SwitchPointServer "check_mode" script for local development.
+# Stores mode in a simple state file so the Next.js admin UI can be tested safely.
+
+STATE_FILE="${SWITCHPOINT_STATE_FILE:-/tmp/switchpoint_mode}"
+
+if [ -f "$STATE_FILE" ]; then
+  mode="$(cat "$STATE_FILE" | tr -d '\r\n' | tr '[:upper:]' '[:lower:]')"
+else
+  mode="aws"
+fi
+
+if [ "$mode" = "verizon" ]; then
+  echo "verizon"
+else
+  echo "aws"
+fi
+
+

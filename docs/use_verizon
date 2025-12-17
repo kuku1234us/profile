@@ -1,7 +1,7 @@
 #!/bin/bash
 # Verizon Private IP
 TARGET_IP="172.31.117.228"
-VPN_PORT="49898"
+VPN_PORT="49100"
 PANEL_PORT="12593"
 
 # 1. Enable IP Forwarding on the fly (Just in case)

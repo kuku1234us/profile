@@ -1,5 +1,5 @@
 #!/bin/bash
-VPN_PORT="49898"
+VPN_PORT="49100"
 
 # 1. Clear NAT forwarding rules
 iptables -t nat -F
