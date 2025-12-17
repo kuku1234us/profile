@@ -114,20 +114,6 @@ ssh "${SSH_OPTS[@]}" -i "$SSH_KEY" ubuntu@$SERVER_IP \
     rm -f "$HOME/pnpm-lock.yaml" || true
     rm -f "$REMOTE_DIR/package-lock.json" || true
 
-    # Bun-only runtime expects a Next "standalone" build.
-    # If you don't see this folder, rebuild locally after setting `output: "standalone"` in next.config.ts.
-    if [ ! -f "$REMOTE_DIR/.next/standalone/server.js" ]; then
-        echo "   ❌ Standalone build not found at .next/standalone/server.js"
-        echo "      Rebuild locally (bun run build) after enabling output: \"standalone\" and re-deploy."
-        exit 1
-    fi
-
-    # Next standalone requires copying static + public into the standalone directory.
-    mkdir -p "$REMOTE_DIR/.next/standalone/.next"
-    rm -rf "$REMOTE_DIR/.next/standalone/public" "$REMOTE_DIR/.next/standalone/.next/static" 2>/dev/null || true
-    cp -a "$REMOTE_DIR/public" "$REMOTE_DIR/.next/standalone/public"
-    cp -a "$REMOTE_DIR/.next/static" "$REMOTE_DIR/.next/standalone/.next/static"
-
     # Compare hashes to decide if we need a server-side install
     if [ "$LOCAL_HASH" != "$OLD_HASH" ]; then
         echo "   ⚠️  Dependencies changed! Running bun install..."
@@ -167,14 +153,14 @@ After=network.target
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=$REMOTE_DIR/.next/standalone
+WorkingDirectory=$REMOTE_DIR
 Environment=NODE_ENV=production
 Environment=PORT=$PORT
-Environment=HOSTNAME=0.0.0.0
 Environment=BUN_INSTALL=/home/ubuntu/.bun
 Environment=PATH=/home/ubuntu/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-# Run the standalone server bundle with Bun (no Node.js binary required).
-ExecStart=$BUN_BIN $REMOTE_DIR/.next/standalone/server.js
+# Run Next's CLI with Bun (no Node.js binary required).
+# We invoke Next's real JS entrypoint (not node_modules/.bin/next) to avoid any Node shebang wrappers.
+ExecStart=$BUN_BIN $REMOTE_DIR/node_modules/next/dist/bin/next start --port $PORT --hostname 0.0.0.0
 Restart=always
 RestartSec=3
 
