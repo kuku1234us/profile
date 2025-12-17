@@ -109,6 +109,25 @@ ssh "${SSH_OPTS[@]}" -i "$SSH_KEY" ubuntu@$SERVER_IP \
     tar -xzf /tmp/deploy.tar.gz -C "$REMOTE_DIR"
     cd "$REMOTE_DIR"
 
+    # Cleanup stray lockfiles that confuse Next.js workspace-root inference and output tracing.
+    # These can be leftovers from earlier experiments (npm/pnpm) and are not needed in bun-only mode.
+    rm -f "$HOME/pnpm-lock.yaml" || true
+    rm -f "$REMOTE_DIR/package-lock.json" || true
+
+    # Bun-only runtime expects a Next "standalone" build.
+    # If you don't see this folder, rebuild locally after setting `output: "standalone"` in next.config.ts.
+    if [ ! -f "$REMOTE_DIR/.next/standalone/server.js" ]; then
+        echo "   ❌ Standalone build not found at .next/standalone/server.js"
+        echo "      Rebuild locally (bun run build) after enabling output: \"standalone\" and re-deploy."
+        exit 1
+    fi
+
+    # Next standalone requires copying static + public into the standalone directory.
+    mkdir -p "$REMOTE_DIR/.next/standalone/.next"
+    rm -rf "$REMOTE_DIR/.next/standalone/public" "$REMOTE_DIR/.next/standalone/.next/static" 2>/dev/null || true
+    cp -a "$REMOTE_DIR/public" "$REMOTE_DIR/.next/standalone/public"
+    cp -a "$REMOTE_DIR/.next/static" "$REMOTE_DIR/.next/standalone/.next/static"
+
     # Compare hashes to decide if we need a server-side install
     if [ "$LOCAL_HASH" != "$OLD_HASH" ]; then
         echo "   ⚠️  Dependencies changed! Running bun install..."
@@ -148,13 +167,14 @@ After=network.target
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=$REMOTE_DIR
+WorkingDirectory=$REMOTE_DIR/.next/standalone
 Environment=NODE_ENV=production
 Environment=PORT=$PORT
+Environment=HOSTNAME=0.0.0.0
 Environment=BUN_INSTALL=/home/ubuntu/.bun
 Environment=PATH=/home/ubuntu/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-# Use bunx (`bun x`) so we don't rely on a `node` binary being present for CLI shebangs.
-ExecStart=$BUN_BIN x next start -p $PORT -H 0.0.0.0
+# Run the standalone server bundle with Bun (no Node.js binary required).
+ExecStart=$BUN_BIN $REMOTE_DIR/.next/standalone/server.js
 Restart=always
 RestartSec=3
 
