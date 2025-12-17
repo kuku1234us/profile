@@ -2,7 +2,6 @@
 
 # --- CONFIGURATION ---
 SERVER_IP="18.211.104.93"
-REMOTE_DIR="/home/ubuntu/profile"
 # Using $HOME ensures it works on your machine without hardcoding /home/kothreat
 SSH_KEY="$HOME/.ssh/abab1234usAWSNewYork.pem"
 # Bun is installed per-user by default. Use an absolute path so non-interactive shells work.
@@ -58,8 +57,9 @@ scp "${SSH_OPTS[@]}" -i "$SSH_KEY" deploy.tar.gz ubuntu@$SERVER_IP:/tmp/deploy.t
 # 5. Remote Execution
 echo "🤖 Connecting to server..."
 ssh "${SSH_OPTS[@]}" -i "$SSH_KEY" ubuntu@$SERVER_IP \
-  "REMOTE_DIR='$REMOTE_DIR' SERVICE_NAME='$SERVICE_NAME' PORT='$PORT' LOCAL_HASH='$LOCAL_HASH' bash -s" << 'EOF'
+  "SERVICE_NAME='$SERVICE_NAME' PORT='$PORT' LOCAL_HASH='$LOCAL_HASH' bash -s" << 'EOF'
     set -euo pipefail
+    APP_DIR="/home/ubuntu/profile"
     
     # --- Find Bun in a non-interactive SSH session ---
     # Do NOT rely on shell init files (.bashrc/.profile). Instead, look for Bun in common locations.
@@ -97,22 +97,22 @@ ssh "${SSH_OPTS[@]}" -i "$SSH_KEY" ubuntu@$SERVER_IP \
         exit 1
     fi
     
-    mkdir -p "$REMOTE_DIR"
+    mkdir -p "$APP_DIR"
 
     # Check existing hash on server
     OLD_HASH=""
-    if [ -f "$REMOTE_DIR/bun.lock.hash" ]; then
-        OLD_HASH=$(cat "$REMOTE_DIR/bun.lock.hash")
+    if [ -f "$APP_DIR/bun.lock.hash" ]; then
+        OLD_HASH=$(cat "$APP_DIR/bun.lock.hash")
     fi
 
     echo "   ↳ Unpacking files..."
-    tar -xzf /tmp/deploy.tar.gz -C "$REMOTE_DIR"
-    cd "$REMOTE_DIR"
+    tar -xzf /tmp/deploy.tar.gz -C "$APP_DIR"
+    cd "$APP_DIR"
 
     # Cleanup stray lockfiles that confuse Next.js workspace-root inference and output tracing.
     # These can be leftovers from earlier experiments (npm/pnpm) and are not needed in bun-only mode.
     rm -f "$HOME/pnpm-lock.yaml" || true
-    rm -f "$REMOTE_DIR/package-lock.json" || true
+    rm -f "$APP_DIR/package-lock.json" || true
 
     # Compare hashes to decide if we need a server-side install
     if [ "$LOCAL_HASH" != "$OLD_HASH" ]; then
@@ -153,14 +153,14 @@ After=network.target
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=$REMOTE_DIR
+WorkingDirectory=/home/ubuntu/profile
 Environment=NODE_ENV=production
 Environment=PORT=$PORT
 Environment=BUN_INSTALL=/home/ubuntu/.bun
 Environment=PATH=/home/ubuntu/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 # Run Next's CLI with Bun (no Node.js binary required).
 # We invoke Next's real JS entrypoint (not node_modules/.bin/next) to avoid any Node shebang wrappers.
-ExecStart=$BUN_BIN $REMOTE_DIR/node_modules/next/dist/bin/next start --port $PORT --hostname 0.0.0.0
+ExecStart=$BUN_BIN /home/ubuntu/profile/node_modules/next/dist/bin/next start --port $PORT --hostname 0.0.0.0
 Restart=always
 RestartSec=3
 

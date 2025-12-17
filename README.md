@@ -33,6 +33,13 @@ This project is intended to run in **Bun-only mode** in both development and pro
 - Bun is used to run the app: `bun run dev`, `bun run build`, `bun run start`
 - The EC2 process manager is **systemd**, not PM2 (PM2 is Node-based).
 
+One important operational detail is that the included `deploy.sh` is an **artifact deploy**: it uploads a pre-built `.next/` bundle and then extracts runtime files onto the server. Because of that, the server “runtime directory” is not a great place to also do Git operations. If you run `git pull` in a directory that is being overwritten by deployments, Git will frequently stop with errors like “local changes would be overwritten” even when you did not manually edit anything.
+
+If you want both behaviors, the simplest pattern is to keep **two separate folders** on the server:
+
+- A **runtime folder** (example: `/home/ubuntu/profile-app`) that `deploy.sh` writes into and `systemd` runs from.
+- A **repo folder** (example: `/home/ubuntu/profile-repo`) that is a normal `git clone` where you can safely run `git pull` for inspection/debugging.
+
 ### Environment variables
 
 Avoid committing `.env` files. Instead:
