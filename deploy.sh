@@ -180,6 +180,38 @@ UNIT
         exit 1
     fi
 
+    # Port readiness check (no HTTP request): make sure something is listening on $PORT.
+    echo "   ↳ Waiting for port $PORT to be listening..."
+    SS_BIN="$(command -v ss || true)"
+    is_listening() {
+        if [ -n "${SS_BIN:-}" ]; then
+            # Prefer ss filter when available; fall back to grep on generic output.
+            "$SS_BIN" -ltnH "sport = :$PORT" 2>/dev/null | grep -q .
+            return $?
+        fi
+        # Fallback (should be rare): generic check without ss.
+        netstat -ltn 2>/dev/null | grep -qE "LISTEN\\s+.*(:|\\])$PORT\\b"
+    }
+
+    LISTEN_OK=0
+    for _ in {1..25}; do
+        if is_listening; then
+            LISTEN_OK=1
+            break
+        fi
+        sleep 1
+    done
+
+    if [ "$LISTEN_OK" -ne 1 ]; then
+        echo "   ❌ Service is active, but port $PORT is not listening yet. Status + logs:"
+        sudo -n "$SYSCTL" status "$SERVICE_NAME.service" --no-pager -l || true
+        sudo -n journalctl -u "$SERVICE_NAME.service" -n 120 --no-pager -l || true
+        if [ -n "${SS_BIN:-}" ]; then
+            "$SS_BIN" -ltnp || true
+        fi
+        exit 1
+    fi
+
     rm /tmp/deploy.tar.gz
     echo "✅ Remote Server Updated!"
 EOF
